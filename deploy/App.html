@@ -1,4 +1,3 @@
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
@@ -29,7 +28,7 @@ var widgetMode;
 var burndownChart;
 var ONE_DAY = 1000 * 60 * 60 * 24;
 var DEBUG_TODOS = false;
-var DEBUG_ACTUALS = true;
+var DEBUG_ACTUALS = false;
 
 function mainQueryCallback(results) {
     var startDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedStart());
@@ -185,7 +184,7 @@ function drawChartTODOs(startDate, endDate, results) {
     var minDate = new Date(startDate.getTime());
     minDate.setDate(minDate.getDate() - 1);
     var maxDate = new Date(endDate.getTime());
-    maxDate.setDate(maxDate.getDate() + 3);
+    maxDate.setDate(maxDate.getDate() + 2);
     
 
     var totalEstimate = 0;
@@ -358,7 +357,7 @@ function drawChartActuals(startDate, endDate, results) {
     var minDate = new Date(startDate.getTime());
     minDate.setDate(minDate.getDate() - 1);
     var maxDate = new Date(endDate.getTime());
-    maxDate.setDate(maxDate.getDate() + 3);
+    maxDate.setDate(maxDate.getDate() + 2);
 
     var history = []
     for (var i = 0; i < results.tasks.length; i++) {
@@ -375,7 +374,8 @@ function drawChartActuals(startDate, endDate, results) {
         
         //revisions are reverse order because [0] is the latest revision
         for (var j = revisions.length - 1; j >= 0; j--) {
-            var creationDate = convertIsoDate(revisions[j].CreationDate);
+		    var creationDateISO = revisions[j].CreationDate;
+            var creationDate = convertIsoDate(creationDateISO);
             if (DEBUG_ACTUALS) {
                 console.log(task.FormattedID + " " + task.WorkProduct.FormattedID + " " + creationDate + " " + revisions[j].Description);
             }
@@ -411,7 +411,18 @@ function drawChartActuals(startDate, endDate, results) {
                     foundActualsEdit = true;
                 }
             }
-
+			if (DEBUG_ACTUALS) {
+				console.log(task.FormattedID + " minDate: " + minDate +" ||| ISO date: "+ creationDateISO + " ||| startDate: " + startDate);
+				console.log(task.FormattedID + " "+(new Date(creationDate).getTime())+ " <"  +new Date(minDate).getTime());
+			}
+			var creationDateInt =  (new Date(creationDate).getTime());
+			var minDateInt = (new Date(minDate).getTime());
+			if( creationDateInt < minDateInt)
+			{
+			   //we dont want edits before the sprint to be counted, which would cause negative ACTUALS when actuals are moved back down to 0
+			   foundActualsEdit = false;
+			   console.log(task.FormattedID + "skip revision, it is earlier than start date");
+			}
             if (foundActualsEdit) {
                 if (DEBUG_ACTUALS) {
                     console.log(task.FormattedID + " ACTUALS revision delta: " + delta);
