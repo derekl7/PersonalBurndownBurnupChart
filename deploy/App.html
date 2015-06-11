@@ -30,7 +30,7 @@ var burndownChart;
 var ONE_DAY = 1000 * 60 * 60 * 24;
 var DEBUG = false;
 
-function draw(results) {
+function mainQueryCallback(results) {
     var startDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedStart());
     startDate.setHours(23);
     startDate.setMinutes(59);
@@ -44,7 +44,9 @@ function draw(results) {
     if (!widgetMode) {
         drawTable(results);
     }
-    drawChart(startDate, endDate, results);
+    drawChartTODOs(startDate, endDate, results);
+    
+    hideWait();
 }
 
 function drawTable(results) {
@@ -138,14 +140,16 @@ function by(property) {
         }
     };
 }
-
-function drawChart(startDate, endDate, results) {
-    if (typeof burndownChart !== "undefined") {
+function clearChart()
+{
+   if (typeof burndownChart !== "undefined") {
         burndownChart.remove();
-    }
+   }
+}
+function drawChartTODOs(startDate, endDate, results) {
 
     if (results.tasks.length == 0) {
-        hideWait();
+        
         document.getElementById("table_div").innerHTML = "";
         document.getElementById("chart_div").innerHTML = "You do not have any tasks in this iteration";
         return;
@@ -361,7 +365,7 @@ function runMainQuery() {
         query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND (Owner = \"__USER_NAME__\"))"
     };
 
-    batchToolkit.findAll(taskQuery, draw);
+    batchToolkit.findAll(taskQuery, mainQueryCallback);
 }
 
 function initPage() {
