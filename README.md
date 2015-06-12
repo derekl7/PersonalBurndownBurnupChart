@@ -9,6 +9,8 @@ The Personal Burndown Chart app can be used to gain visibility into your persona
 
 <b>CAUTION:</b> Personal burndown charts are somewhat controversial. Some people have very strong opinions against such reports. You are cautioned against using this information, as with most Rally and Agile practices, to measure or rate the performance of an individual.
 
+"Some men just want to watch the world burn" - Alfred Pennyworth
+
 ## How to Use
 
 ### Running the App
