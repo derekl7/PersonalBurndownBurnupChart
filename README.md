@@ -17,7 +17,7 @@ The Personal Burndown Chart app can be used to gain visibility into your persona
 
 If you want to start using the app immediately, create an Custom HTML app on your Rally dashboard. Then copy App.html from the deploy folder into the HTML text area. That's it, it should be ready to use. See [this](http://www.rallydev.com/help/use_apps#create) help link if you don't know how to create a dashboard page for Custom HTML apps.
 
-Or you can just click [here](https://raw.githubusercontent.com/derekl7/PersonalBurndownChart/master/deploy/App.html) to find the file and copy it into the custom HTML app.
+Or you can just click [here](https://raw.githubusercontent.com/derekl7/PersonalBurndownBurnupChart/master/deploy/App.html) to find the file and copy it into the custom HTML app.
 
 ### Using the App
 
@@ -39,4 +39,4 @@ You're free to customize this app to your liking (see the License section for de
 
 ## License
 
-This app is released under the MIT license. See the file [LICENSE](https://raw.github.com/derekl7/PersonalBurndownChart/master/LICENSE) for the full text.
+This app is released under the MIT license. See the file [LICENSE](https://raw.github.com/derekl7/PersonalBurndownBurnupChart/master/LICENSE) for the full text.
