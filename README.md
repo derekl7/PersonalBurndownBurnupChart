@@ -39,4 +39,4 @@ You're free to customize this app to your liking (see the License section for de
 
 ## License
 
-PersonalBurndownChart is released under the MIT license. See the file [LICENSE](https://raw.github.com/derekl7/PersonalBurndownChart/master/LICENSE) for the full text.
+This app is released under the MIT license. See the file [LICENSE](https://raw.github.com/derekl7/PersonalBurndownChart/master/LICENSE) for the full text.

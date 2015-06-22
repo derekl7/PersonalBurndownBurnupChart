@@ -8,6 +8,14 @@
 <link rel="stylesheet" type="text/css" href="/slm/css/rally/core.css" charset="utf-8"/>
 <link rel="stylesheet" type="text/css" href="/slm/css/slm.css" charset="utf-8"/>
 <link rel="stylesheet" type="text/css" href="/slm/css/sprites.css" charset="utf-8"/>
+
+<style>
+a[target="_blank"]:after {
+    content: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=");
+    margin: 0 0 0 5px;
+}
+</style>
+
 <script type="text/javascript" src="/slm/js/slm.js"></script>
 <script type="text/javascript" src="/slm/js-lib/dojo/1.3.1/dojo/dojo.js"></script>
 <script type="text/javascript" src="/slm/js-lib/ejsc/2.1/EJSChart.js"></script>
@@ -29,6 +37,9 @@ var burndownChart;
 var ONE_DAY = 1000 * 60 * 60 * 24;
 var DEBUG_TODOS = false;
 var DEBUG_ACTUALS = false;
+var DEBUG_USERS = false;
+
+var gotUsers = 0;
 
 function mainQueryCallback(results) {
     var startDate = RALLY.Mashup.Utilities.convertIsoDateOnly(iterationDropdown.getSelectedStart());
@@ -523,6 +534,55 @@ function drawChartActuals(startDate, endDate, results) {
 
 }
 
+function uniques(arr) {
+    var a = [];
+    for (var i=0, l=arr.length; i<l; i++)
+        if (a.indexOf(arr[i]) === -1 && arr[i] !== '')
+            a.push(arr[i]);
+    return a;
+}
+
+var usernameToQuery = "usernameToQuery";
+function getUsersCallback(results)
+{
+    hideWaitUsersIndicator();
+    gotUsers=1;
+    if(DEBUG_USERS)
+    {
+        console.log("results from get users query");
+        console.log(results);
+    }
+    
+    var userNameEmails = [usernameToQuery];
+    var dropdownUsersList = "";
+    for (var i = 0; i < results.tasks.length; i++) {
+        var task = results.tasks[i];
+        var usernameemail=task.Owner.UserName;
+        userNameEmails.push(usernameemail);
+        
+        if (DEBUG_USERS) {
+            console.log(">>> getUsers");
+            console.log(task.Owner.UserName);
+            console.log("<<<end getUsers");
+        }
+    }
+    if(DEBUG_USERS)
+    {
+         console.log("Email list before removing uniques");
+         console.log(userNameEmails);
+    }
+    userNameEmails = uniques(userNameEmails);
+    if(DEBUG_USERS)
+    {
+        console.log("Email list after removing uniques");
+        console.log(userNameEmails);
+    }
+    for (var i = 0; i < userNameEmails.length; i++)
+    {
+        dropdownUsersList = dropdownUsersList + "<option value='"+userNameEmails[i]+"'>"+userNameEmails[i]+"</option>";
+    }
+    document.getElementById("usersDropdown").innerHTML = dropdownUsersList;
+}
 
 function convertIsoDate(isoDate) {
     var jsDate = RALLY.Mashup.Utilities.convertIsoToJSDate(isoDate);
@@ -544,18 +604,49 @@ function formatDate(date) {
     return month + "/" + day + "/" + year;
 }
 
+var lastIterationQueried = "";
 function runMainQuery() {
-    showWait("<em>Loading chart...</em>");
 
+    if(iterationDropdown.getSelectedName() != lastIterationQueried)
+    {
+         lastIterationQueried = iterationDropdown.getSelectedName();
+         gotUsers = 0;
+    }
+    
+    
+    
+    var usersDropdownElement = document.getElementById("usersDropdown");
+    usernameToQuery = usersDropdownElement.options[usersDropdownElement.selectedIndex].value;
+    
+    showWait("<em>Loading chart for "+usernameToQuery+"...</em>");
+    showWaitUsersIndicator("Loading Users...");
+    
+    
     var taskQuery = {
         key: "tasks",
         type: "Task",
         fetch: "FormattedID,Name,ObjectID,Rank,State,Blocked,Estimate,ToDo,Actuals,WorkProduct,RevisionHistory,Revisions",
         order: "Rank",
-        query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND (Owner = \"__USER_NAME__\"))"
+        query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND (Owner = \""+usernameToQuery+"\"))"
     };
 
     batchToolkit.findAll(taskQuery, mainQueryCallback);
+    
+    
+    if (gotUsers==0)
+    {
+        var taskQueryGetUsers = {
+            key: "tasks",
+            type: "Task",
+            fetch: "FormattedID,Name,ObjectID,Rank,State,Blocked,Estimate,ToDo,Actuals,WorkProduct,RevisionHistory,Revisions,Owner,UserName",
+            order: "Rank",
+            query: "((Iteration.Name = \"" + iterationDropdown.getSelectedName() + "\") AND  (State != \"z\") )"
+        };
+    
+        console.log(taskQueryGetUsers);
+    
+        batchToolkit.findAll(taskQueryGetUsers, getUsersCallback);
+    }
 }
 
 function initPage() {
@@ -586,9 +677,16 @@ function showWait(message) {
     document.getElementById("spinner_div").innerHTML = spinner + " " + message;
 
 }
+function showWaitUsersIndicator() {
+    RALLY.Mashup.Utilities.showWait("spinner_div_users", []);
+    var spinner = document.getElementById("spinner_div").innerHTML;
+}
 
 function hideWait() {
     RALLY.Mashup.Utilities.hideWait("spinner_div", ["chart_div", "table_div"]);
+}
+function hideWaitUsersIndicator() {
+    RALLY.Mashup.Utilities.hideWait("spinner_div_users", []);
 }
 
 function getAvailableWidth() {
@@ -695,9 +793,19 @@ function getAvailableWidth() {
                 <tr>
                     <td id="timeboxLabel" class="lbl">Iteration</td>
                     <td><select id="timeboxList"></select></td>
-                    <td nowrap>
+                    <td style="white-space:nowrap">
                         <div id="dates_div" style="margin-left: 10px"></div>
                     </td>
+
+                    <td id="timeboxLabel2" class="lbl">User: </td>
+                    <td style="white-space:nowrap"> 
+                       <select id="usersDropdown" onChange="runMainQuery()"  style="width: 100px">
+                          <option value='__USER_NAME__'>__USER_NAME__</option>
+                       </select>
+                       <span id="spinner_div_users" style="clear: both;"></span>
+                    </td>
+                    
+                    
                 </tr>
             </table>
             <br/>
@@ -712,5 +820,10 @@ function getAvailableWidth() {
         </td>
     </tr>
 </table>
+Caution! Personal burndown charts are somewhat controversial. 
+Some people have strong opinions against such reports. 
+You are cautioned against using this information, as with most Rally and Agile practices,
+ to measure or rate the performance of an individual.
+<br><a href="https://goo.gl/2Ds22E" target="_blank">GitHub Source</a>
 </body>
 </html>
